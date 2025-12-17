@@ -3,7 +3,6 @@ import time
 
 
 cap = cv2.VideoCapture(0)
-i=1
 frame_test=0
 
 
