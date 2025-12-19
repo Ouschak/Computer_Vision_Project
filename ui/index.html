@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>AI Focus Tracker</title>
+  <style>
+    :root{
+      --bg: #0b0f14;
+      --panel: rgba(255,255,255,0.06);
+      --panel2: rgba(255,255,255,0.08);
+      --border: rgba(255,255,255,0.10);
+      --text: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.62);
+      --muted2: rgba(255,255,255,0.45);
+
+      --ok: #4ade80;
+      --warn: #fbbf24;
+      --bad: #fb7185;
+      --idle: rgba(255,255,255,0.35);
+
+      --accent: var(--ok);
+      --shadow: 0 16px 50px rgba(0,0,0,0.45);
+      --radius: 18px;
+      --radius2: 22px;
+    }
+
+    *{ box-sizing: border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:
+        radial-gradient(1200px 800px at 20% 10%, rgba(74,222,128,0.10), transparent 60%),
+        radial-gradient(1000px 700px at 80% 30%, rgba(251,191,36,0.09), transparent 55%),
+        radial-gradient(900px 650px at 50% 95%, rgba(251,113,133,0.07), transparent 55%),
+        var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    .app{
+      height:100%;
+      display:grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 14px;
+      padding: 16px;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--panel), rgba(255,255,255,0.03));
+      border-radius: var(--radius2);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+      min-width: 240px;
+    }
+    .logo{
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.22), rgba(255,255,255,0.06)),
+                  linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02));
+      border: 1px solid var(--border);
+      display:grid;
+      place-items:center;
+      position: relative;
+      overflow:hidden;
+    }
+    .logo::after{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background: radial-gradient(circle, rgba(255,255,255,0.14), transparent 55%);
+      transform: rotate(25deg);
+    }
+    .logo svg{ opacity:0.95; }
+
+    .title{
+      display:flex;
+      flex-direction:column;
+      line-height:1.1;
+    }
+    .title strong{
+      font-size: 14px;
+      letter-spacing: 0.2px;
+    }
+    .title span{
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .pill{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.20);
+    }
+    .dot{
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(255,255,255,0.06);
+    }
+    .pill .label{
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .pill .value{
+      font-size: 12px;
+      font-weight: 650;
+      letter-spacing: 0.2px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 14px;
+      min-height: 0;
+    }
+
+    .card{
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--panel), rgba(255,255,255,0.03));
+      border-radius: var(--radius2);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      overflow:hidden;
+      min-height:0;
+    }
+
+    .cardHeader{
+      padding: 14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .cardHeader h2{
+      margin:0;
+      font-size: 13px;
+      font-weight: 650;
+      letter-spacing: 0.2px;
+    }
+    .subtle{
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .main{
+      display:grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .hero{
+      padding: 18px 18px 10px 18px;
+      display:grid;
+      grid-template-columns: 1fr 320px;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .stateTitle{
+      display:flex;
+      flex-direction:column;
+      gap: 8px;
+    }
+    .stateTitle .big{
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: -0.6px;
+      line-height: 1.0;
+    }
+    .stateTitle .desc{
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+      max-width: 520px;
+    }
+
+    .chips{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .chip{
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.20);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: var(--muted);
+      display:flex;
+      gap: 8px;
+      align-items:center;
+    }
+    .chip b{
+      color: var(--text);
+      font-weight: 650;
+    }
+
+    .ringWrap{
+      display:grid;
+      place-items:center;
+      padding: 10px;
+      border-radius: var(--radius2);
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.18);
+    }
+
+    .ring{
+      width: 220px;
+      height: 220px;
+      position: relative;
+      display:grid;
+      place-items:center;
+    }
+    .ring svg{
+      width: 220px;
+      height: 220px;
+      transform: rotate(-90deg);
+    }
+    .ring .center{
+      position:absolute;
+      inset: 0;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap: 6px;
+      transform: translateY(2px);
+    }
+    .ring .pct{
+      font-size: 34px;
+      font-weight: 850;
+      letter-spacing: -0.6px;
+    }
+    .ring .caption{
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .ring .mini{
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .divider{
+      height: 1px;
+      background: rgba(255,255,255,0.08);
+      margin: 0 18px;
+    }
+
+    .body{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      padding: 14px 18px 18px 18px;
+      min-height:0;
+    }
+
+    .miniCard{
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.16);
+      border-radius: var(--radius);
+      padding: 14px;
+      min-height: 0;
+    }
+    .miniCard h3{
+      margin:0 0 8px 0;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 650;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
+    }
+
+    .metric{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .metric .left{
+      display:flex;
+      flex-direction:column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .metric .name{
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .metric .val{
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      white-space: nowrap;
+    }
+    .metric .hint{
+      font-size: 12px;
+      color: var(--muted2);
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .bar{
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      margin-top: 10px;
+    }
+    .bar > div{
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, rgba(255,255,255,0.12), rgba(255,255,255,0.20));
+      border-right: 1px solid rgba(255,255,255,0.10);
+      transition: width 300ms ease;
+    }
+
+    .right{
+      display:grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+    }
+
+    .preview{
+      padding: 14px 16px 16px 16px;
+      display:grid;
+      gap: 10px;
+    }
+
+    .previewBox{
+      border-radius: var(--radius2);
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.25);
+      overflow:hidden;
+      position: relative;
+      aspect-ratio: 16 / 10;
+      display:grid;
+      place-items:center;
+    }
+
+    .previewBox img{
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      display:block;
+      filter: saturate(1.02) contrast(1.02);
+    }
+
+    .previewOverlay{
+      position:absolute;
+      inset: 0;
+      padding: 12px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      pointer-events:none;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.22);
+      font-size: 12px;
+      color: var(--muted);
+      backdrop-filter: blur(10px);
+    }
+    .badge strong{
+      color: var(--text);
+      font-weight: 700;
+    }
+    .badge .miniDot{
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(255,255,255,0.06);
+    }
+
+    .privacy{
+      padding: 12px 14px;
+      border-radius: var(--radius2);
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.16);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .privacy b{
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .controls{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      justify-content:space-between;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--panel), rgba(255,255,255,0.03));
+      border-radius: var(--radius2);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .btnRow{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+    }
+
+    button{
+      appearance:none;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.22);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-weight: 750;
+      letter-spacing: 0.1px;
+      cursor:pointer;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+    }
+    button:hover{
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,0.18);
+      background: rgba(0,0,0,0.28);
+    }
+    button:active{
+      transform: translateY(0px);
+    }
+
+    .primary{
+      border-color: rgba(74,222,128,0.35);
+      background: rgba(74,222,128,0.10);
+    }
+    .danger{
+      border-color: rgba(251,113,133,0.35);
+      background: rgba(251,113,133,0.10);
+    }
+    .toggle{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.22);
+    }
+    .switch{
+      width: 42px;
+      height: 24px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.10);
+      position:relative;
+      cursor:pointer;
+      flex: 0 0 auto;
+    }
+    .knob{
+      position:absolute;
+      top: 50%;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.85);
+      transition: left 180ms ease;
+    }
+    .toggle.on .switch{
+      background: rgba(251,191,36,0.20);
+      border-color: rgba(251,191,36,0.35);
+    }
+    .toggle.on .knob{
+      left: 20px;
+    }
+    .toggle .text{
+      display:flex;
+      flex-direction:column;
+      line-height:1.1;
+    }
+    .toggle .text strong{
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .toggle .text span{
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 980px){
+      body{ overflow:auto; }
+      .grid{ grid-template-columns: 1fr; }
+      .hero{ grid-template-columns: 1fr; }
+      .ringWrap{ justify-self:start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3c5 0 9 4 9 9s-4 9-9 9-9-4-9-9 4-9 9-9Z" stroke="rgba(255,255,255,0.75)" stroke-width="1.8"/>
+            <path d="M12 7v5l3 2" stroke="rgba(255,255,255,0.75)" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="title">
+          <strong>AI Focus Tracker</strong>
+          <span>Local. Private. Calm feedback.</span>
+        </div>
+      </div>
+
+      <div class="pill">
+        <div class="dot" id="statusDot"></div>
+        <div class="label">State</div>
+        <div class="value" id="stateText">IDLE</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card main">
+        <div class="cardHeader">
+          <h2>Focus Overview</h2>
+          <div class="subtle" id="subtitle">Waiting for start.</div>
+        </div>
+
+        <div class="hero">
+          <div class="stateTitle">
+            <div class="big" id="bigState">Paused</div>
+            <div class="desc" id="stateDesc">
+              You are in control. Click Start when you are ready. Camera frames are never saved.
+            </div>
+
+            <div class="chips">
+              <div class="chip">Looking. <b id="lookingChip">false</b></div>
+              <div class="chip">App OK. <b id="appChip">false</b></div>
+              <div class="chip">Mode. <b id="modeChip">Normal</b></div>
+            </div>
+          </div>
+
+          <div class="ringWrap">
+            <div class="ring">
+              <svg viewBox="0 0 220 220">
+                <defs>
+                  <filter id="softGlow">
+                    <feGaussianBlur stdDeviation="3.5" result="blur"/>
+                    <feMerge>
+                      <feMergeNode in="blur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                </defs>
+
+                <circle cx="110" cy="110" r="88"
+                        stroke="rgba(255,255,255,0.10)"
+                        stroke-width="16" fill="none" />
+                <circle id="ringProgress" cx="110" cy="110" r="88"
+                        stroke="var(--accent)"
+                        stroke-width="16"
+                        stroke-linecap="round"
+                        fill="none"
+                        filter="url(#softGlow)"
+                        stroke-dasharray="552.92"
+                        stroke-dashoffset="552.92"
+                        style="transition: stroke-dashoffset 350ms ease, stroke 250ms ease;" />
+              </svg>
+
+              <div class="center">
+                <div class="pct" id="pctText">0%</div>
+                <div class="caption">Focus today</div>
+                <div class="mini" id="miniTime">0m focused. 0m distracted.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="body">
+          <div class="miniCard">
+            <h3>Warning</h3>
+            <div class="metric">
+              <div class="left">
+                <div class="name">Countdown</div>
+                <div class="val" id="warnVal">0s</div>
+                <div class="hint" id="warnHint">No warning active.</div>
+              </div>
+              <div class="left" style="text-align:right;">
+                <div class="name">Rule</div>
+                <div class="val" style="font-size:14px;font-weight:800;">Pause after N</div>
+                <div class="hint">Backend controlled. UI only shows.</div>
+              </div>
+            </div>
+            <div class="bar"><div id="warnBar"></div></div>
+          </div>
+
+          <div class="miniCard">
+            <h3>Context</h3>
+            <div class="metric">
+              <div class="left">
+                <div class="name">Active window</div>
+                <div class="val" style="font-size:14px;" id="windowVal">Unknown</div>
+                <div class="hint" id="windowHint">X11 window title appears here.</div>
+              </div>
+            </div>
+            <div class="metric">
+              <div class="left">
+                <div class="name">Last event</div>
+                <div class="val" style="font-size:14px;" id="eventVal">None</div>
+                <div class="hint">Useful for trust and debugging.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card right">
+        <div class="cardHeader">
+          <h2>Camera Preview</h2>
+          <div class="subtle">Render only. No saving.</div>
+        </div>
+
+        <div class="preview">
+          <div class="previewBox">
+            <img id="previewImg" alt="camera preview" src="" />
+            <div class="previewOverlay">
+              <div class="badge">
+                <span class="miniDot"></span>
+                <span>Camera. <strong id="camBadge">OFF</strong></span>
+              </div>
+              <div class="badge">
+                <span>Local only</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="privacy">
+            <b>Privacy.</b> Frames are never stored. Only booleans, timestamps, and window titles are logged.
+            <br/>
+            <b>Control.</b> One click stop is always available.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="btnRow">
+        <button class="primary" id="btnStart">Start</button>
+        <button class="danger" id="btnStop">Stop</button>
+      </div>
+
+      <div class="toggle" id="notesToggle" role="button" tabindex="0" aria-label="Toggle Notes Mode">
+        <div class="switch" aria-hidden="true"><div class="knob"></div></div>
+        <div class="text">
+          <strong>Notes Mode</strong>
+          <span>Ignore eye tracking</span>
+        </div>
+      </div>
+
+      <div class="subtle" id="footerHint">Mock mode. Plug pywebview API later.</div>
+    </div>
+  </div>
+
+  <script>
+    // UI expects "facts" (faits). Frontend derives visuals (visuels).
+    // Later you replace mockFetchStatus and mockFetchFrame with pywebview.api calls.
+
+    const UI = {
+      stateText: document.getElementById("stateText"),
+      bigState: document.getElementById("bigState"),
+      stateDesc: document.getElementById("stateDesc"),
+      subtitle: document.getElementById("subtitle"),
+      dot: document.getElementById("statusDot"),
+
+      lookingChip: document.getElementById("lookingChip"),
+      appChip: document.getElementById("appChip"),
+      modeChip: document.getElementById("modeChip"),
+
+      pctText: document.getElementById("pctText"),
+      miniTime: document.getElementById("miniTime"),
+      ring: document.getElementById("ringProgress"),
+
+      warnVal: document.getElementById("warnVal"),
+      warnHint: document.getElementById("warnHint"),
+      warnBar: document.getElementById("warnBar"),
+
+      windowVal: document.getElementById("windowVal"),
+      windowHint: document.getElementById("windowHint"),
+      eventVal: document.getElementById("eventVal"),
+
+      previewImg: document.getElementById("previewImg"),
+      camBadge: document.getElementById("camBadge"),
+
+      btnStart: document.getElementById("btnStart"),
+      btnStop: document.getElementById("btnStop"),
+      notesToggle: document.getElementById("notesToggle"),
+      footerHint: document.getElementById("footerHint"),
+    };
+
+    const CIRC = 2 * Math.PI * 88; // r = 88
+    const clamp01 = (x) => Math.max(0, Math.min(1, x));
+    const fmtTime = (sec) => {
+      sec = Math.max(0, Math.floor(sec));
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      if (h > 0) return `${h}h ${m}m`;
+      return `${m}m`;
+    };
+
+    function setAccentByState(state){
+      let accent = "var(--idle)";
+      if (state === "TRACKING") accent = "var(--ok)";
+      if (state === "WARNING") accent = "var(--warn)";
+      if (state === "PAUSED")  accent = "var(--bad)";
+      document.documentElement.style.setProperty("--accent", accent);
+    }
+
+    function render(status){
+      // status is backend truth (vérité back-end)
+      const {
+        state,
+        notes_mode,
+        looking_proxy,
+        app_ok,
+        productive_seconds_today,
+        distracted_seconds_today,
+        warning_seconds_left,
+        warning_seconds_total,
+        active_window_title,
+        last_event,
+        camera_on
+      } = status;
+
+      setAccentByState(state);
+
+      UI.stateText.textContent = state;
+      UI.bigState.textContent =
+        state === "TRACKING" ? "Focused" :
+        state === "WARNING"  ? "Focus lost" :
+        state === "PAUSED"   ? "Paused" : "Idle";
+
+      UI.subtitle.textContent =
+        state === "TRACKING" ? "Keep going. Quiet feedback only." :
+        state === "WARNING"  ? "Return attention before the timer ends." :
+        state === "PAUSED"   ? "Tracking stopped. Manual restart required." :
+                               "Press Start when ready.";
+
+      UI.stateDesc.textContent =
+        state === "TRACKING" ? "You are productive. The system is observing only." :
+        state === "WARNING"  ? "You are currently non productive. If this continues, tracking will pause." :
+        state === "PAUSED"   ? "Camera and window trackers are stopped. Click Start to resume." :
+                               "Tracking is not running.";
+
+      UI.lookingChip.textContent = String(!!looking_proxy);
+      UI.appChip.textContent = String(!!app_ok);
+      UI.modeChip.textContent = notes_mode ? "Notes" : "Normal";
+
+      const total = Math.max(1, productive_seconds_today + distracted_seconds_today);
+      const pct = clamp01(productive_seconds_today / total);
+      UI.pctText.textContent = `${Math.round(pct * 100)}%`;
+      UI.miniTime.textContent = `${fmtTime(productive_seconds_today)} focused. ${fmtTime(distracted_seconds_today)} distracted.`;
+
+      // Ring progress
+      const offset = CIRC * (1 - pct);
+      UI.ring.style.strokeDasharray = String(CIRC);
+      UI.ring.style.strokeDashoffset = String(offset);
+
+      // Warning bar
+      const wLeft = Math.max(0, warning_seconds_left);
+      const wTot  = Math.max(1, warning_seconds_total);
+      const wPct = clamp01(1 - (wLeft / wTot));
+      UI.warnVal.textContent = (state === "WARNING") ? `${wLeft}s` : "0s";
+      UI.warnHint.textContent =
+        state === "WARNING" ? `Pausing in ${wLeft}s unless productivity returns.` : "No warning active.";
+      UI.warnBar.style.width = `${Math.round(wPct * 100)}%`;
+
+      // Context
+      UI.windowVal.textContent = active_window_title || "Unknown";
+      UI.windowHint.textContent = active_window_title ? "Detected from X11 (xdotool/wmctrl)." : "Waiting for tracker.";
+      UI.eventVal.textContent = last_event || "None";
+
+      // Camera badge and preview
+      UI.camBadge.textContent = camera_on ? "ON" : "OFF";
+    }
+
+    async function fetchStatus(){
+      // When running inside PyWebView, use pywebview.api.get_status()
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.get_status){
+        return await window.pywebview.api.get_status();
+      }
+      return await mockFetchStatus();
+    }
+
+    async function fetchFrameBase64Jpeg(){
+      // When running inside PyWebView, use pywebview.api.get_frame()
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.get_frame){
+        return await window.pywebview.api.get_frame();
+      }
+      return await mockFetchFrame();
+    }
+
+    // Mock engine
+    let MOCK = {
+      state: "PAUSED",
+      notes_mode: false,
+      looking_proxy: false,
+      app_ok: false,
+      productive_seconds_today: 0,
+      distracted_seconds_today: 0,
+      warning_seconds_left: 0,
+      warning_seconds_total: 8,
+      active_window_title: "",
+      last_event: "UI mock running",
+      camera_on: false
+    };
+
+    async function mockFetchStatus(){
+      // gentle simulation for demo polish
+      if (MOCK.state === "TRACKING"){
+        MOCK.productive_seconds_today += 1;
+        MOCK.looking_proxy = true;
+        MOCK.app_ok = true;
+        MOCK.active_window_title = "Code. AI Focus Tracker";
+        MOCK.last_event = "Tracking";
+      } else if (MOCK.state === "WARNING"){
+        MOCK.distracted_seconds_today += 1;
+        MOCK.looking_proxy = false;
+        MOCK.app_ok = true;
+        MOCK.active_window_title = "Browser. YouTube";
+        MOCK.warning_seconds_left = Math.max(0, MOCK.warning_seconds_left - 1);
+        MOCK.last_event = "Warning countdown";
+        if (MOCK.warning_seconds_left === 0){
+          MOCK.state = "PAUSED";
+          MOCK.camera_on = false;
+          MOCK.last_event = "Paused due to non productivity";
+        }
+      }
+      return structuredClone(MOCK);
+    }
+
+    async function mockFetchFrame(){
+      // No real camera in mock. Return null to keep preview empty.
+      return null;
+    }
+
+    // UI actions. Later call backend commands.
+    async function startTracking(){
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.start_tracking){
+        await window.pywebview.api.start_tracking();
+      } else {
+        MOCK.state = "TRACKING";
+        MOCK.camera_on = true;
+        MOCK.warning_seconds_left = MOCK.warning_seconds_total;
+        MOCK.last_event = "Started tracking (mock)";
+      }
+    }
+
+    async function stopTracking(){
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.stop_tracking){
+        await window.pywebview.api.stop_tracking();
+      } else {
+        MOCK.state = "PAUSED";
+        MOCK.camera_on = false;
+        MOCK.last_event = "Stopped tracking (mock)";
+      }
+    }
+
+    async function toggleNotes(){
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.toggle_notes_mode){
+        await window.pywebview.api.toggle_notes_mode();
+      } else {
+        MOCK.notes_mode = !MOCK.notes_mode;
+        MOCK.last_event = `Notes mode ${MOCK.notes_mode ? "ON" : "OFF"} (mock)`;
+      }
+      UI.notesToggle.classList.toggle("on", MOCK.notes_mode);
+    }
+
+    // Demo button to show warning state transition without backend
+    function demoWarning(){
+      if (MOCK.state === "TRACKING"){
+        MOCK.state = "WARNING";
+        MOCK.warning_seconds_left = MOCK.warning_seconds_total;
+        MOCK.last_event = "Entered WARNING (mock)";
+      }
+    }
+
+    UI.btnStart.addEventListener("click", startTracking);
+    UI.btnStop.addEventListener("click", stopTracking);
+    UI.notesToggle.addEventListener("click", toggleNotes);
+    UI.notesToggle.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") toggleNotes();
+    });
+
+    // Subtle demo. Double click subtitle to trigger warning.
+    UI.subtitle.addEventListener("dblclick", demoWarning);
+
+    async function tick(){
+      const status = await fetchStatus();
+      render(status);
+
+      const frameB64 = await fetchFrameBase64Jpeg();
+      if (frameB64){
+        UI.previewImg.src = "data:image/jpeg;base64," + frameB64;
+      }
+    }
+
+    // UI polling rates
+    // Status at 1 Hz (human speed)
+    setInterval(tick, 1000);
+    // Preview at 30 FPS if frames exist. Here it will stay empty in mock mode.
+    setInterval(async () => {
+      const frameB64 = await fetchFrameBase64Jpeg();
+      if (frameB64){
+        UI.previewImg.src = "data:image/jpeg;base64," + frameB64;
+      }
+    }, 33);
+
+    // initial paint
+    render(MOCK);
+    UI.notesToggle.classList.toggle("on", MOCK.notes_mode);
+  </script>
+</body>
+</html>
