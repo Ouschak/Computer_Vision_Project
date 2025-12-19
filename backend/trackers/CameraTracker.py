@@ -6,6 +6,8 @@ import cv2
 
 
 class CameraTracker:
+
+    #debug flag is temporary variable until UI is implemented 
     def __init__(self, index=0, width=640, height=480, debug=False):
         self.index = index
         self.width = width
@@ -18,7 +20,7 @@ class CameraTracker:
 
         self.latest_frame_ts = None
 
-        self.log = logging.getLogger("CameraTracker")
+        self.log = logging.getLogger(self.__class__.__name__)
 
     def start(self):
         if self.thread and self.thread.is_alive():
@@ -83,7 +85,7 @@ class CameraTracker:
                     if key == ord("q"):
                         self.log.info("Pressed 'q' -> stopping")
                         self.stop_event.set()
-
+                        break
         except Exception:
             self.log.exception("Camera loop crashed")
         finally:
@@ -93,14 +95,20 @@ class CameraTracker:
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s %(levelname)s: %(message)s",
+        format="%(asctime)s %(name)s %(levelname)s: %(message)s",
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler("app.log")
+
+        ]
+
     )
 
-    tracker = CameraTracker(debug=True)
+    tracker = CameraTracker()
     tracker.start()
 
     try:
-        while True:
-            time.sleep(1)
+        while not tracker.stop_event.is_set():
+            time.sleep(0.1)
     except KeyboardInterrupt:
         tracker.stop()
