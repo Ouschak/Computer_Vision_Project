@@ -7,16 +7,18 @@ import cv2
 
 class CameraTracker:
 
-    #debug flag is temporary variable until UI is implemented 
+    # debug flag is temporary variable until UI is implemented
     def __init__(self, index=0, width=640, height=480, debug=False):
         self.index = index
         self.width = width
         self.height = height
         self.debug = debug
 
+        self.latest_frame = None
         self.cap = None
         self.thread = None
         self.stop_event = threading.Event()
+        self.flagWorkingOnce = False
 
         self.latest_frame_ts = None
 
@@ -56,18 +58,26 @@ class CameraTracker:
 
     def _release(self):
         if self.cap is not None:
-            self.log.info("Releasing camera")
+            for _ in range(1000):
+                self.log.info("Releasing camera")
             self.cap.release()
             self.cap = None
 
         if self.debug:
+            
+            self.log.info("ok")
             cv2.destroyAllWindows()
+
+    def get_latest_frame(self):
+        return self.latest_frame
 
     def _loop(self):
 
         try:
             self.cap = self._open_camera()
-            self.log.info("Reading frames... (press 'q' in the window to stop if debug=True)")
+            self.log.info(
+                "Reading frames... (press 'q' in the window to stop if debug=True)"
+            )
 
             while not self.stop_event.is_set():
                 ret, frame = self.cap.read()
@@ -78,6 +88,7 @@ class CameraTracker:
                     continue
 
                 self.latest_frame_ts = time.monotonic()
+                self.latest_frame = frame
 
                 if self.debug:
                     cv2.imshow("camera_debug", frame)
@@ -86,29 +97,29 @@ class CameraTracker:
                         self.log.info("Pressed 'q' -> stopping")
                         self.stop_event.set()
                         break
-        except Exception:
+
+        except Exception as e:
             self.log.exception("Camera loop crashed")
         finally:
             self._release()
+
+
+def create_camera():
+    tracker = CameraTracker(debug=True)
+    tracker.start()
+    return tracker
 
 
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(name)s %(levelname)s: %(message)s",
-        handlers=[
-            logging.StreamHandler(),
-            logging.FileHandler("app.log")
-
-        ]
-
+        handlers=[logging.StreamHandler(), logging.FileHandler("app.log")],
     )
 
-    tracker = CameraTracker()
-    tracker.start()
-
-    try:
-        while not tracker.stop_event.is_set():
-            time.sleep(0.1)
-    except KeyboardInterrupt:
-        tracker.stop()
+tracker = create_camera()
+try:
+    while not tracker.stop_event.is_set():
+        time.sleep(0.1)
+except KeyboardInterrupt:
+    tracker.stop()
