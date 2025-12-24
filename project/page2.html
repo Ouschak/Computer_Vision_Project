@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Face Tracking - Detailed Explanation</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo">FaceTracker<span style="color: var(--accent-color);">.edu</span></div>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li class="dropdown">
+                        <a href="#">Analysis ▾</a>
+                        <div class="dropdown-content">
+                            <a href="page2.html">Detailed Explanation</a>
+                            <a href="page3.html">Observation Events</a>
+                            <a href="page4.html">Values Gallery</a>
+                        </div>
+                    </li>
+                    <li><a href="page5.html">Feedback</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <h1>Frame Lifecycle Analysis</h1>
+        <div class="detail-layout">
+            <div class="main-content">
+                <div class="main-image">
+                    <img src="images/frame_lifecycle.jpg" alt="Frame Processing Lifecycle">
+                </div>
+                <div class="text-content">
+                    <h2>From Camera to Boolean</h2>
+                    <p>The core of the system is the <code>LookingSensor</code> class, which orchestrates the
+                        transformation of raw pixel data into a semantic "looking" signal.</p>
+                    <p><strong>1. Frame Capture:</strong> The <code>CameraTracker</code> runs in a separate thread,
+                        constantly polling the video device (e.g., <code>/dev/video0</code>). It stores the latest frame
+                        and its timestamp, ensuring the main loop always has access to the freshest data without
+                        blocking.</p>
+                    <p><strong>2. Preprocessing:</strong> OpenCV captures frames in BGR format. Before passing them to
+                        MediaPipe, we convert them to RGB. This step is crucial for accurate model inference.</p>
+                    <p><strong>3. Landmark Detection:</strong> The <code>FaceLandmarker</code> model analyzes the RGB
+                        image. It returns a mesh of 468 3D points. We specifically track the nose tip and the outer
+                        edges of the face to calculate orientation.</p>
+                    <p><strong>4. Signal Smoothing:</strong> Raw detection can be jittery. We apply an Exponential
+                        Moving Average (EMA) to the calculated nose offset. This acts as a low-pass filter, stabilizing
+                        the output boolean.</p>
+                </div>
+            </div>
+            <aside class="sidebar">
+                <h3>Data Points</h3>
+                <ul>
+                    <li>
+                        <strong>Frame Timestamp</strong>
+                        <p>Monotonic time of capture (ms precision).</p>
+                    </li>
+                    <li>
+                        <strong>Face Bounding Box</strong>
+                        <p>Computed from min/max x,y of landmarks + padding.</p>
+                    </li>
+                    <li>
+                        <strong>Nose Offset</strong>
+                        <p>Normalized horizontal distance from face center.</p>
+                    </li>
+                    <li>
+                        <strong>Smoothed Signal</strong>
+                        <p>EMA filtered offset value (alpha=0.7).</p>
+                    </li>
+                </ul>
+            </aside>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-section">
+                <h4>Project Info</h4>
+                <p>Academic visualization of Python-based computer vision.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Contact</h4>
+                <p>Department of Computer Science</p>
+                <p>lab@university.edu</p>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

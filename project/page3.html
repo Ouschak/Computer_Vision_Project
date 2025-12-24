@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Face Tracking - Observation Events</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo">FaceTracker<span style="color: var(--accent-color);">.edu</span></div>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li class="dropdown">
+                        <a href="#">Analysis ▾</a>
+                        <div class="dropdown-content">
+                            <a href="page2.html">Detailed Explanation</a>
+                            <a href="page3.html">Observation Events</a>
+                            <a href="page4.html">Values Gallery</a>
+                        </div>
+                    </li>
+                    <li><a href="page5.html">Feedback</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <h1>System Events</h1>
+
+        <div class="event-block">
+            <img src="https://placehold.co/200x150/2c3e50/ffffff?text=Frame+Received" alt="Frame Received">
+            <div class="event-content">
+                <h3>Event: Frame Received</h3>
+                <p>Triggered when <code>cam.get_latest_frame()</code> returns a valid frame. The timestamp is checked
+                    against the last processed timestamp to ensure we don't re-process old data.</p>
+            </div>
+        </div>
+
+        <div class="event-block">
+            <img src="https://placehold.co/200x150/3498db/ffffff?text=Processing" alt="Frame Processed">
+            <div class="event-content">
+                <h3>Event: Frame Processed</h3>
+                <p>The vision pipeline activates. Landmarks are extracted, and the <code>looking</code> boolean is
+                    updated. This is the most computationally intensive phase.</p>
+            </div>
+        </div>
+
+        <div class="event-block">
+            <img src="https://placehold.co/200x150/e74c3c/ffffff?text=Timeout" alt="Timeout Warning">
+            <div class="event-content">
+                <h3>Event: No Frame Timeout</h3>
+                <p>Safety mechanism: If <code>time.monotonic() - last_seen > 1.0</code>, the system assumes the camera
+                    has frozen or disconnected and initiates a safe shutdown.</p>
+            </div>
+        </div>
+
+        <div class="no-comment">
+            <p>No comments on these events? <a href="page5.html">Submit an observation report</a>.</p>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-section">
+                <h4>Project Info</h4>
+                <p>Academic visualization of Python-based computer vision.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Contact</h4>
+                <p>Department of Computer Science</p>
+                <p>lab@university.edu</p>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>
