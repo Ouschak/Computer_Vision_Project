@@ -62,20 +62,6 @@ This output can be used by a controller or UI module.
 
 ---
 
-## 📁 Backend Structure
-
-```
-backend/
-├── __init__.py
-├── app.py
-├── trackers/
-│   ├── __init__.py
-│   ├── camera.py
-│   └── vision.py
-└── utils/
-    └── ...
-```
-
 
 ## Logging
 
