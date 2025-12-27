@@ -1,4 +1,5 @@
-venv/
-*.log
 logs/
-*.log.*
+**/*.log.*
+**/venv/
+**/__pycache__/
+**/*.pyc
