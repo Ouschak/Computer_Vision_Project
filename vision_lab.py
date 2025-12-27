@@ -1,6 +1,6 @@
 import logging
 
-
+import os
 import time
 
 from backend.trackers.CameraTracker import CameraTracker
@@ -45,10 +45,11 @@ def main():
                     print(result, flush=True)
                     total_fps_processed += 1
                     last_processed_ts = frame_ts
+
                     cv2.imshow("vision_debug", frame)
                     cv2.waitKey(1)
 
-                time.sleep(0.05)  # FPS PROCESSING
+                time.sleep(0.2)
                 continue
 
             # no frame
