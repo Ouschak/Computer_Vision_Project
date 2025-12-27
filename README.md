@@ -45,7 +45,7 @@ pip install -r requirements.txt
 Run the vision sandbox:
 
 ```bash
-python -m backend.app
+python -m backend.app.vision_lab
 ```
 
 
