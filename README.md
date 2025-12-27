@@ -1,126 +1,99 @@
-Focus Tracker – Vision Backend
+# Focus Tracker Backend
 
-Focus Tracker is a Python backend prototype that uses OpenCV and MediaPipe
-to detect whether a user is looking at the screen in real time.
+Focus Tracker is a Python backend that uses OpenCV and MediaPipe to compute a `looking_proxy` signal based on camera input.  
+It is part of a larger desktop productivity monitoring system.
 
-This repository contains only the vision backend.
-No UI, no window tracking, no productivity logic beyond vision signals.
+This backend is **responsible only for the vision logic and signals**.  
+Frontend and UI are separate and not included here.
 
-What This Backend Does
+---
 
-Opens the system camera
+## 🧠 What This Backend Does
 
-Detects face landmarks using MediaPipe
+- Opens the camera using OpenCV
+- Detects a face and landmarks using MediaPipe
+- Computes a simple proxy for “user looking at the screen”
+- Exposes structured signals used by the rest of the application
 
-Produces a boolean attention signal:
+---
 
-looking_raw – direct vision signal
+## 🚀 Requirements
 
-looking_proxy – debounced, stable signal
+- Fedora Linux (X11 recommended)
+- Python 3.10+
+- Camera access
+- X11 session (for display and window tracking)
 
-Runs continuously until stopped
+---
 
-Designed to be imported and extended by higher-level systems
+## 📦 Setup (Backend Only)
 
-This backend does not:
+1. Create a virtual environment:
 
-Save camera frames
-
-Perform productivity decisions
-
-Block applications
-
-Upload data anywhere
-
-Tech Stack
-
-Python 3.13
-
-OpenCV
-
-MediaPipe
-
-NumPy
-
-Tested on Fedora Linux.
-
-Project Structure
-backend/
-├── app/            # Entry point
-├── trackers/       # Camera and vision tracking logic
-├── vision/         # Vision helpers
-models/             # MediaPipe models
-
-Setup (First Time)
-
-Clone the repository:
-
-git clone https://github.com/<your-username>/focus-tracker.git
-cd focus-tracker
-
-
-Create and activate a virtual environment:
-
+```bash
 python3 -m venv venv
+````
+
+2. Activate it:
+
+```bash
 source venv/bin/activate
+```
 
+3. Install dependencies:
 
-Install dependencies:
-
+```bash
 pip install -r requirements.txt
+```
 
+> This installs OpenCV, MediaPipe, NumPy and other required packages.
 
-Sanity check:
+---
 
-python -c "import cv2, mediapipe, numpy; print('ok')"
+## ▶️ Running the Vision Module
 
-Run the Vision Backend (Important)
+Run the vision sandbox:
 
-⚠️ Do NOT run files directly
+```bash
+python -m backend.app
+```
 
-The backend must be run as a module from the project root so Python imports
-resolve correctly.
+or
 
-python -m backend.app.vision_lab
+```bash
+python -m backend.app
+```
 
+This ensures Python sees your `backend` package correctly.
 
-This starts:
+---
 
-the camera loop
+## 🧪 How It Works (High Level)
 
-MediaPipe face detection
+1. **OpenCV** opens the camera.
+2. **MediaPipe FaceMesh** extracts facial landmarks.
+3. A simple rule computes `looking_proxy`:
 
-real-time vision signal generation
+   * Head roughly centered → `True`
+   * Not centered → `False`
 
-Output
+This output can be used by a controller or UI module.
 
-The backend continuously updates internal vision signals such as:
+---
 
-face detected
+## 📁 Backend Structure
 
-looking away
+```
+backend/
+├── __init__.py
+├── app.py
+├── trackers/
+│   ├── __init__.py
+│   ├── camera.py
+│   └── vision.py
+└── utils/
+    └── ...
+```
 
-stable attention state after debouncing
-
-(Exact output format may evolve as the backend is extended.)
-
-Status
-
-This project is an early-stage vision backend prototype intended as a
-foundation for higher-level focus or productivity systems.
-
-
-## Logging
-
-The application writes logs to `app.log`.
-
-### Log rotation (Linux)
-
-For long-running usage, log rotation is recommended.
-A sample `logrotate` configuration is provided in:
-
-
-To enable it on Fedora/Linux:
-
-sudo cp config/log_rotate/ai-focus.conf /etc/log_rotate.d/ai-focus
+Only backend logic is included here. UI and frontend live outside this repository.
 
